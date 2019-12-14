@@ -1,0 +1,21 @@
+
+%type <expr> expression assignment_expression unary_expression postfix_expression cast_expression primary_expression
+%type <expr> multiplicative_expression shift_expression additive_expression relational_expression equality_expression
+%type <expr> and_expression exclusive_or_expression inclusive_or_expression logical_and_expression logical_or_expression
+%type <expr> conditional_expression constant_expression declaration declarator initializer
+%type <expr> storage_class_specifier type_specifier struct_or_union_specifier enum_specifier struct_or_union struct_declaration_list
+%type <expr> declaration_specifiers struct_declaration specifier_qualifier_list type_qualifier struct_declarator
+%type <expr> enumerator_list enumerator direct_declarator pointer
+%type <expr> parameter_declaration init_declarator
+
+
+%type <expr> type_name abstract_declarator direct_abstract_declarator statement compound_statement labeled_statement
+%type <expr> expression_statement selection_statement iteration_statement jump_statement external_declaration function_definition
+
+%type <exprlist> statement_list parameter_list translation_unit declaration_list argument_expression_list identifier_list
+%type <exprlist> init_declarator_list parameter_type_list type_qualifier_list initializer_list
+
+%type <token> assignement_operator unary_operator
+
+%type <string> t_string_lit t_identifier
+%type <number> t_int_lit t_char_lit t_double_lit t_float_lit

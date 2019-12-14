@@ -1,0 +1,2 @@
+yylval = %union name
+yytext = actual string that matched the token
