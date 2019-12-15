@@ -4,9 +4,13 @@
 #include "includes.hpp"
 #include "../structures.hpp"
 
-class RootNode : public Node{
+class RootNode {
   public:
-    RootNode(NodePtr other);
+    RootNode();
+    void addNode(NodePtr other);
+
+  protected:
+    std::vector<NodePtr> branches;
 };
 
 #endif

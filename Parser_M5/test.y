@@ -28,7 +28,7 @@
 
 %token CASE DEFAULT IF ELSE SWITCH WHILE DO FOR GOTO CONTINUE BREAK RETURN
 
-%type <node> external_declaration translation_unit
+%type <node> translation_unit
 %type <node> expression assignment_expression unary_expression postfix_expression cast_expression primary_expression
 %type <node> multiplicative_expression shift_expression additive_expression relational_expression equality_expression
 %type <node> and_expression exclusive_or_expression inclusive_or_expression logical_and_expression logical_or_expression
@@ -440,24 +440,21 @@ jump_statement
 
 translation_unit // START OF PARSING. // RootNode
 // translation_unit is root node (therefore root_node.addNode($1))
-	: external_declaration                              { root_node.addNode($1); }
-	| external_declaration translation_unit             { root_node.addNode($1); }
+	: function_definition                               { root_node.addNode($1); }
+	| function_definition translation_unit              { root_node.addNode($1); }
+
+	| declaration                                       { root_node.addNode($1); }
+	| declaration translation_unit                      { root_node.addNode($1); }
 	;
 
-// Node
-external_declaration // the only things you can do in a block are define a function/variable or call them;
-	: function_definition                               { $$ = }
-	| declaration
-	;
 
+// FUNCTION implementation
 function_definition
     // type      and    IDENTIFIER          and         declaration/implementation
-	: declaration_specifiers declarator declaration_list compound_statement
-	| declaration_specifiers declarator compound_statement
+	: declaration_specifiers declarator compound_statement      { $$ = new Function($1, $2, $3); }
 
     // function without type (default return is int)
-	| declarator declaration_list compound_statement
-	| declarator compound_statement
+	| declarator compound_statement                     { $$ = new Function(new FullType(integer), $1, $2); }
 	;
 
 %%

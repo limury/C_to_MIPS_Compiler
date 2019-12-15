@@ -8,7 +8,7 @@
 class Node {
   public:
     Node();
-    void addNode(RootNode other);
+    void addNode(NodePtr other);
 
   protected:
     std::vector<NodePtr> branches;

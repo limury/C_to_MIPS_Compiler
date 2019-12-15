@@ -1,0 +1,2 @@
+fix lexer default type int: 
+	| declarator compound_statement                             { $$ = new Function(new FullType(integer), )}
