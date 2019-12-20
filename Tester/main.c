@@ -1,15 +1,19 @@
 #include <stdio.h>
 
+union a {
+    int b;
+    double c;
+    char d;
+};
+
+int function(int e){
+    return 20;
+}
+
 int main(){
 
-int fork (int b){
-    int c (int d){
-        return d + 1;
-    }
-    return c(2);
-}
-printf("%d", fork(3));
+    int array;
 
+    printf("%d\n");
 }
-
 

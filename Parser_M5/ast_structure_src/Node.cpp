@@ -4,6 +4,7 @@ Node::Node(){
     std::vector<NodePtr> tmp;
     branches = tmp;
 }
-Node::addNode (NodePtr other){
+
+void Node::addNode (NodePtr other){
     branches.push_back(other);
 }

@@ -1,5 +1,5 @@
 %code requires{
-    #include "structures.hpp"
+    #include "ast_structure/structures.hpp"
     #include "ast_structure/includes.hpp"
     #include <cassert>
 
@@ -10,6 +10,9 @@
     const Node* node;
     const Function* funct;
     std::vector<yytokentype> item_list;
+
+    DirectDeclaratorPtr directDeclaratorPtr;
+
     double double_num;
     int int_num;
     std::string* str;
@@ -28,10 +31,11 @@
 
 %token CASE DEFAULT IF ELSE SWITCH WHILE DO FOR GOTO CONTINUE BREAK RETURN
 
+%type <directDeclaratorPtr> direct_declarator
 %type <node> translation_unit
 %type <node> expression assignment_expression unary_expression postfix_expression cast_expression primary_expression
 %type <node> multiplicative_expression shift_expression additive_expression relational_expression equality_expression
-%type <node> and_expression exclusive_or_expression inclusive_or_expression logical_and_expression logical_or_expression
+%type <node> bit_and_expression bit_xor_expression bit_or_expression and_expression or_expression
 %type <node> conditional_expression constant_expression declaration declarator initializer
 %type <node> storage_class_specifier type_specifier struct_or_union_specifier enum_specifier struct_or_union struct_declaration_list
 %type <node> declaration_specifiers struct_declaration specifier_qualifier_list type_qualifier struct_declarator
@@ -134,34 +138,34 @@ equality_expression
 	| equality_expression NE_OP relational_expression
 	;
 
-and_expression
+bit_and_expression
 	: equality_expression
-	| and_expression '&' equality_expression
+	| bit_and_expression '&' equality_expression
 	;
 
-exclusive_or_expression
+bit_xor_expression
+	: bit_and_expression
+	| bit_xor_expression '^' bit_and_expression
+	;
+
+bit_or_expression
+	: bit_xor_expression
+	| bit_or_expression '|' bit_xor_expression
+	;
+
+and_expression
+	: bit_or_expression
+	| and_expression AND_OP bit_or_expression
+	;
+
+or_expression
 	: and_expression
-	| exclusive_or_expression '^' and_expression
-	;
-
-inclusive_or_expression
-	: exclusive_or_expression
-	| inclusive_or_expression '|' exclusive_or_expression
-	;
-
-logical_and_expression
-	: inclusive_or_expression
-	| logical_and_expression AND_OP inclusive_or_expression
-	;
-
-logical_or_expression
-	: logical_and_expression
-	| logical_or_expression OR_OP logical_and_expression
+	| or_expression OR_OP and_expression
 	;
 
 conditional_expression
-	: logical_or_expression
-	| logical_or_expression '?' expression ':' conditional_expression
+	: or_expression
+	| or_expression '?' expression ':' conditional_expression
 	;
 
 assignment_expression
@@ -236,6 +240,7 @@ type_specifier
 	| UNSIGNED
 	| struct_or_union_specifier
 	| enum_specifier
+    | TYPE_NAME
 	;
 
 struct_or_union_specifier
@@ -297,26 +302,24 @@ type_qualifier
 	| VOLATILE
 	;
 
-declarator
-	: pointer direct_declarator
-	| direct_declarator
+declarator //pointer is an int
+	: pointer direct_declarator         { $$ = new Declarator($1, $2); }
+	| direct_declarator                 { $$ = new Declarator(0, $2); }
 	;
-
+// Responsible for variable and function names as well as parameters for function
 direct_declarator
-	: IDENTIFIER
-	| '(' declarator ')'
-	| direct_declarator '[' constant_expression ']'
-	| direct_declarator '[' ']'
-	| direct_declarator '(' parameter_type_list ')'
-	| direct_declarator '(' identifier_list ')'
-	| direct_declarator '(' ')'
+	: IDENTIFIER                                        { $$ = new IdentifierDeclarator($1); }                      
+	| '(' declarator ')'                                { $$ = new ParenthesizedDeclarator($2); }
+	| direct_declarator '[' constant_expression ']'     { $$ = new ArrayDeclarator($1, $3); }
+	| direct_declarator '[' ']'                         { $$ = new ArrayDeclarator($1, nullptr); }
+	| direct_declarator '(' parameter_type_list ')'     { $$ = new FunctionDeclarator($1, $3); }
+//used for K&R functions	| direct_declarator '(' identifier_list ')'         { $$ = new DirectDeclarator($1, $3); }
+	| direct_declarator '(' ')'                         { $$ = new FunctionDeclarator($1, std::vector<VariablePtr>{}); }
 	;
 
 pointer
-	: '*'
-	| '*' type_qualifier_list
-	| '*' pointer
-	| '*' type_qualifier_list pointer
+	: '*'                       { $$ = 1; }
+	| '*' pointer               { $$ = $2 + 1; }
 	;
 
 type_qualifier_list
@@ -337,7 +340,7 @@ parameter_list
 
 parameter_declaration
 	: declaration_specifiers declarator
-	| declaration_specifiers abstract_declarator
+	| declaration_specifiers abstract_declarator        //function pointer stuff
 	| declaration_specifiers
 	;
 
@@ -398,7 +401,7 @@ labeled_statement
 compound_statement
 	: '{' '}'
 	| '{' statement_list '}'
-	| '{' declaration_list '}'declaration_list
+	| '{' declaration_list '}'
 	| '{' declaration_list statement_list '}'
 	;
 
@@ -451,18 +454,20 @@ translation_unit // START OF PARSING. // RootNode
 // FUNCTION implementation
 function_definition
     // type      and    IDENTIFIER          and         declaration/implementation
-	: declaration_specifiers declarator compound_statement      { $$ = new Function($1, $2, $3); }
+	: declaration_specifiers declarator compound_statement      
 
     // function without type (default return is int)
-	| declarator compound_statement                     { $$ = new Function(new FullType(integer), $1, $2); }
+	| declarator compound_statement                     
 	;
+
+
 
 %%
 #include <stdio.h>
 
 
 NodePtr parseAST(){
-    RootNodePtr root_node = new RootNode();
+    NodePtr root_node = new Node();
     yyparse();
     return root_node;
 }

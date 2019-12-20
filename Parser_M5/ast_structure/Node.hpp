@@ -2,18 +2,19 @@
 #define NODE
 
 #include "includes.hpp"
-#include "../structures.hpp"
+#include "structures.hpp"
 
+class Node;
+
+typedef const Node* NodePtr;
 
 class Node {
   public:
     Node();
-    void addNode(const Declaration& other);
-    void addNode(const Function& other)
+    void addNode(NodePtr other);
 
   protected:
-    std::vector<Function> function_branches;
-    std::vector<Declaration> declaration_branches;
+    std::vector<NodePtr> branches;
 };
 
 

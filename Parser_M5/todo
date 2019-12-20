@@ -1,2 +1,16 @@
 fix lexer default type int: 
 	| declarator compound_statement                             { $$ = new Function(new FullType(integer), )}
+
+implement types when implementing structs and such
+
+
+no need to implement:
+    - goto
+    - preprocessors (#)
+    - comma operators ( int a, b, c;)
+    - K&R declarations
+    - unions
+    - variable length arrays ( dynamic allocation )
+    - const / volatile
+    ? function prototypes
+    ? volatile
