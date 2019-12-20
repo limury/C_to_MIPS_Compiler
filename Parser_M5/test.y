@@ -34,7 +34,7 @@
 %type <directDeclaratorPtr> direct_declarator
 %type <node> translation_unit
 %type <node> expression assignment_expression unary_expression postfix_expression cast_expression primary_expression
-%type <node> multiplicative_expression shift_expression additive_expression relational_expression equality_expression
+%type <node> factor_expression shift_expression term_expression relational_expression equality_expression
 %type <node> bit_and_expression bit_xor_expression bit_or_expression and_expression or_expression
 %type <node> conditional_expression constant_expression declaration declarator initializer
 %type <node> storage_class_specifier type_specifier struct_or_union_specifier enum_specifier struct_or_union struct_declaration_list
@@ -105,23 +105,23 @@ cast_expression
 	| '(' type_name ')' cast_expression
 	;
 
-multiplicative_expression
+factor_expression
 	: cast_expression
-	| multiplicative_expression '*' cast_expression
-	| multiplicative_expression '/' cast_expression
-	| multiplicative_expression '%' cast_expression
+	| factor_expression '*' cast_expression
+	| factor_expression '/' cast_expression
+	| factor_expression '%' cast_expression
 	;
 
-additive_expression
-	: multiplicative_expression
-	| additive_expression '+' multiplicative_expression
-	| additive_expression '-' multiplicative_expression
+term_expression
+	: factor_expression
+	| term_expression '+' factor_expression
+	| term_expression '-' factor_expression
 	;
 
 shift_expression
-	: additive_expression
-	| shift_expression LEFT_OP additive_expression
-	| shift_expression RIGHT_OP additive_expression
+	: term_expression
+	| shift_expression LEFT_OP term_expression
+	| shift_expression RIGHT_OP term_expression
 	;
 
 relational_expression

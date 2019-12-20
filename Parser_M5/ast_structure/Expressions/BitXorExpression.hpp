@@ -1,6 +1,6 @@
 
-#ifndef BITOREXPRESSION
-#define BITOREXPRESSION
+#ifndef BITXOREXPRESSION
+#define BITXOREXPRESSION
 
 #include "../structures.hpp"
 

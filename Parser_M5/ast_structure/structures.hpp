@@ -27,6 +27,13 @@ typedef const ConditionalExpression* ConditionalExpressionPtr;
 typedef const BitOrExpression* BitOrExpressionPtr; 
 typedef const BitXorExpression* BitXorExpressionPtr; 
 typedef const BitAndExpression* BitAndExpressionPtr; 
+typedef const EqualityExpression* EqualityExpressionPtr; 
+typedef const RelationalExpression* RelationalExpressionPtr; 
+typedef const ShiftExpression* ShiftExpressionPtr; 
+typedef const TermExpression* TermExpressionPtr; 
+typedef const FactorExpression* FactorExpressionPtr; 
+typedef const CastExpression* CastExpressionPtr; 
+typedef const TypeName* TypeNamePtr; 
 
 
 #endif
