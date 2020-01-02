@@ -1,5 +1,5 @@
 
-#include "../ast_structure/Declarations/ArrayDeclarator.hpp"
+#include "../ast_structure/Declarators/ArrayDeclarator.hpp"
 
 
 ArrayDeclarator::ArrayDeclarator(DirectDeclaratorPtr dir_decl, ConstExpressionPtr n): direct_declarator(dir_decl), size(n){

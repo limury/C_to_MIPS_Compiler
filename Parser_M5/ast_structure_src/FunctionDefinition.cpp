@@ -1,8 +1,7 @@
 
-#include "../ast_structure/Declarations/FunctionDefinition.hpp"
+#include "../ast_structure/Declarators/FunctionDefinition.hpp"
 
 
 
-FunctionDeclarator::FunctionDeclarator(DirectDeclaratorPtr dir_decl, std::vector<VariablePtr> param_list): direct_declarator(dir_decl), param_type_list(param_list){
-    DirectDeclarator::declarator_type = _function;
-}
+FunctionDefinition::FunctionDefinition( FullTypePtr fullTp, Declarator decl, CompoundStatementPtr compoundStmt )
+    :   fullType(fullTp), declarator(decl), compoundStatement(compoundStmt){}

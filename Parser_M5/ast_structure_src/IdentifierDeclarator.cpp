@@ -1,5 +1,5 @@
 
-#include "../ast_structure/Declarations/IdentifierDeclarator.hpp"
+#include "../ast_structure/Declarators/IdentifierDeclarator.hpp"
 
 
 IdentifierDeclarator::IdentifierDeclarator(std::string id): identifier(id){

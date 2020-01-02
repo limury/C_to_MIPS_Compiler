@@ -197,8 +197,8 @@ constant_expression
 	;
 
 declaration
-	: declaration_specifiers ';'
-	| declaration_specifiers init_declarator_list ';'
+	: declaration_specifiers ';'                        { $$ = new Declaration($1, nullptr); }
+	| declaration_specifiers init_declarator_list ';'   { $$ = new Declaration($1, $2); }
 	;
 
 declaration_specifiers // type and pretype
@@ -454,10 +454,10 @@ translation_unit // START OF PARSING. // RootNode
 // FUNCTION implementation
 function_definition
     // type      and    IDENTIFIER          and         declaration/implementation
-	: declaration_specifiers declarator compound_statement      
+	: declaration_specifiers declarator compound_statement  { $$ = new FunctionDefinition( $1, $2, $3 ); }    
 
     // function without type (default return is int)
-	| declarator compound_statement                     
+	| declarator compound_statement                         { $$ = new FunctionDefinition( new FullType(), $1, $2); }       
 	;
 
 

@@ -11,10 +11,11 @@ typedef const Node* NodePtr;
 class Node {
   public:
     Node();
-    void addNode(NodePtr other);
+    void addNode(TranslationUnitPtr other);
 
   protected:
-    std::vector<NodePtr> branches;
+  
+    std::vector<TranslationUnitPtr> branches;
 };
 
 

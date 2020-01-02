@@ -1,5 +1,5 @@
 
-#include "../ast_structure/Declarations/Declarator.hpp"
+#include "../ast_structure/Declarators/Declarator.hpp"
 
 
 
