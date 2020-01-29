@@ -1,2 +1,36 @@
 yylval = %union name
 yytext = actual string that matched the token
+
+bison parses creates a C file which defines a function 'yyparse'
+2 other functions need to be supplied:
+    - yylex and yyerror
+
+you need to add the 'main' function which has to call yyparse
+
+
+
+bison structure:
+    %{
+        Prologue
+    %}
+
+    Bison declarations
+
+    %%
+    Grammar Rules
+    %%
+    Epilogue
+
+
+int yylex(void);
+void yyerror (char const* );
+must be declared in Prologue and implemented in Epilogue
+
+
+%define api.value.type {double}
+    specifies C data type for semantic values (YYSTYPE can be used to refer to the api.value.type)
+
+Possible yyerror:
+    yyerror (char const *s){
+        fprintf(stderr, "%s\n", s)
+    }

@@ -4,6 +4,7 @@
 #include "../structures.hpp"
 
 enum StorageClassSpecifier { TYPEDEF, EXTERN, STATIC, AUTO, REGISTER };
+enum TypeSpecifier {  };
 
 class DeclarationSpecifiers {
   public:
