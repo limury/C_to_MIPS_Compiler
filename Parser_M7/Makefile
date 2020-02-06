@@ -1,17 +1,22 @@
-c_compiler: ast.o gen_asm.o top.o
-	gcc -o c_compiler ast.o gen_asm.o top.o
+CPPFLAGS += -std=c++11 -W -Wall -s
 
-ast.o: ast.c
-	gcc -c -g -o ast.o ast.c_compiler
+all : bin/printTree
 
-gen_asm.o: gen_asm.c ast.h
-	gcc -c -g -o gen_asm.o gen_asm.c
+src/parser.tab.cpp src/parser.tab.hpp : src/parser.y
+	bison -v -d src/parser.y -o src/parser.tab.cpp
 
-top.o: top.c ast.h gen_asm.g lex.yy.c
-	gcc -c -g -o top.o top.c
+src/lexer.yy.cpp : src/lexer.flex src/parser.tab.hpp
+	flex -o src/lexer.yy.cpp src/lexer.flex
 
-lex.yy.c: lexel.l y.tab.c
-	lex lexer.l
+bin/printTree : src/printTree.o src/parser.tab.o src/lexer.yy.o
+	mkdir -p bin
+	g++ $(CPPFLAGS) -o bin/printTree $^
 
-y.tab.c: parser.y
-	tacc -v parser.y
+clean :
+	rm src/*.o
+	rm bin/*
+	rm src/*.tab.cpp
+	rm src/*.tab.hpp
+	rm src/*.yy.cpp
+	rm src/parser.tab.cpp
+	rm src/parser.tab.hpp
