@@ -13,10 +13,11 @@ bin/printTree : src/printTree.o src/parser.tab.o src/lexer.yy.o
 	g++ $(CPPFLAGS) -o bin/printTree $^
 
 clean :
-	rm src/*.o
+	rm src/parser.output
 	rm bin/*
 	rm src/*.tab.cpp
 	rm src/*.tab.hpp
 	rm src/*.yy.cpp
 	rm src/parser.tab.cpp
 	rm src/parser.tab.hpp
+	rm src/*.o

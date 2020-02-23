@@ -30,6 +30,7 @@
 %token T_PTR_OP T_INC_OP T_DEC_OP T_LEFT_OP T_RIGHT_OP T_LE_OP T_GE_OP T_EQ_OP T_NE_OP T_SIZEOF
 %token T_AND_OP T_OR_OP T_MUL_ASSIGN T_DIV_ASSIGN T_MOD_ASSIGN T_ADD_ASSIGN
 %token T_SUB_ASSIGN T_LEFT_ASSIGN T_RIGHT_ASSIGN T_AND_ASSIGN
+%token T_ADD T_SUB
 %token T_XOR_ASSIGN T_OR_ASSIGN T_TYPE_NAME
 
 %token T_TYPEDEF T_EXTERN T_STATIC T_AUTO T_REGISTER
@@ -78,8 +79,8 @@ unary_expression
 unary_operator
 	: '&'                               { $$ = new Node( unary_operator, NodeVec{new Operator(BIN_AND)} ); }
 	| '*'                               { $$ = new Node( unary_operator, NodeVec{new Operator(MULT)} ); }
-	| '+'                               { $$ = new Node( unary_operator, NodeVec{new Operator(PLUS)} ); }
-	| '-'                               { $$ = new Node( unary_operator, NodeVec{new Operator(MINUS)} ); }
+/*	| T_ADD                               { $$ = new Node( unary_operator, NodeVec{new Operator(PLUS)} ); }*/
+	| T_SUB                               { $$ = new Node( unary_operator, NodeVec{new Operator(MINUS)} ); }
 	| '~'                               { $$ = new Node( unary_operator, NodeVec{new Operator(BIN_NOT)} ); }
 	| '!'                               { $$ = new Node( unary_operator, NodeVec{new Operator(LOGICAL_NOT)} ); }
 	;
@@ -98,8 +99,8 @@ multiplicative_expression
 
 additive_expression
 	: multiplicative_expression
-	| additive_expression '+' multiplicative_expression     { $$ = new Node( additive_expression, NodeVec{ $1, opGen(PLUS), $3 } ); }
-	| additive_expression '-' multiplicative_expression     { $$ = new Node( additive_expression, NodeVec{ $1, opGen(MINUS), $3 } ); }
+	| additive_expression T_ADD multiplicative_expression     { $$ = new Node( additive_expression, NodeVec{ $1, opGen(PLUS), $3 } ); }
+	| additive_expression T_SUB multiplicative_expression     { $$ = new Node( additive_expression, NodeVec{ $1, opGen(MINUS), $3 } ); }
 	;
 
 shift_expression
@@ -181,7 +182,7 @@ constant_expression
 	;
 
 declaration
-	: declaration_specifiers ';'                        { std::cout << "found declaration\n"; $$ = new Node( declaration, NodeVec{ $1, opGen(SEMICOLON) } ); std::cout << "declaration ptr: " << $$ << std::endl; }
+	: declaration_specifiers ';'                        { $$ = new Node( declaration, NodeVec{ $1, opGen(SEMICOLON) } );  }
 	| declaration_specifiers init_declarator_list ';'   { $$ = new Node( declaration, NodeVec{ $1, $2, opGen(SEMICOLON) } ); }
 	;
 
@@ -213,7 +214,7 @@ storage_class_specifier
 	;
 
 type_specifier
-	: T_VOID                          { std::cout << "Found void\n"; $$ = opGen(VOID); std::cout << "Void ptr: " << $$ << "\n"; }
+	: T_VOID                          { $$ = opGen(VOID); }
 	| T_CHAR                          { $$ = opGen(CHAR); }
 	| T_SHORT                         { $$ = opGen(SHORT); }
 	| T_INT                           { $$ = opGen(INT); }
@@ -431,19 +432,19 @@ start
     : translation_unit { root = $1; }
 
 translation_unit
-	: external_declaration          { $$ = $1; std::cout << "translation ptr: " << $$ << std::endl;}
+	: external_declaration         
 	| translation_unit external_declaration     { $$ = new Node( translation_unit, NodeVec{ $1, $2 } ); }
 	;
 
 external_declaration
 	: function_definition
-	| declaration   { $$ = $1; std::cout << "declaration ptr: " << $$ << std::endl; }
+	| declaration    { $$ = $1; }
 	;
 
 function_definition
-	: declaration_specifiers declarator declaration_list compound_statement     { $$ = new Node( function_definition, NodeVec{ $1, $2, $3, $4 } ); }
-	| declaration_specifiers declarator compound_statement      { $$ = new Node( function_definition, NodeVec{ $1, $2, $3 } ); }
-	| declarator declaration_list compound_statement        { $$ = new Node( function_definition, NodeVec{ $1, $2, $3 } ); }
+	: declaration_specifiers declarator declaration_list compound_statement     {  $$ = new Node( function_definition, NodeVec{ $1, $2, $3, $4 } ); }
+	| declaration_specifiers declarator compound_statement      {  $$ = new Node( function_definition, NodeVec{ $1, $2, $3 } ); }
+	| declarator declaration_list compound_statement        {  $$ = new Node( function_definition, NodeVec{ $1, $2, $3 } ); }
 	| declarator compound_statement                { $$ = new Node( function_definition, NodeVec{ $1, $2 } ); }
 	;
 
@@ -460,6 +461,6 @@ NodePtr parseAST(){
     std::cout << "Parsing beginning" << std::endl;
     yyparse();
     std::cout << "Parsing done" << std::endl;
-    std::cout << "Tree ptr: " << root << std::endl; 
+    
     return root;
 }

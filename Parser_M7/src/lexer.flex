@@ -31,8 +31,10 @@ static int check_type(void);
 %}
 
 %%
-"/*"                                    { /*comment();*/ }
-"//".*                                    { /* consume //-comment */ }
+"+"						{ return(T_ADD); }
+"//".*                                    {  }
+[/][*][^*]*[*]+([^*/][^*]*[*]+)*[/]       {  }
+[/][*][^*]*[*]+([^*/][^*]*[*]+)*[/]       {  }
 
 "auto"					{ return(T_AUTO); }
 "break"					{ return(T_BREAK); }
@@ -68,18 +70,19 @@ static int check_type(void);
 "while"					{ return(T_WHILE); }
 
 
-[a-zA-Z_][a-zA-Z0-9_]*					{ yylval.string = new std::string(yytext); return check_type(); }
+[a-zA-Z_][a-zA-Z0-9_]*					{ yylval.string = new std::string(yytext); return T_IDENTIFIER/*check_type()*/; }
 
-{L}({L}|{D})*		{ return(check_type()); }
+{L}({L}|{D})*		{ yylval.string = new std::string(yytext);return(check_type()); }
 
-0[xX]{H}+{IS}?		{ return(CONSTANT); }
-0{D}+{IS}?		{ return(CONSTANT); }
-{D}+{IS}?		{ return(CONSTANT); }
-L?'(\\.|[^\\'])+'	{ return(CONSTANT); }
+0[xX]{H}+{IS}?		{ yylval.string = new std::string(yytext);return(T_CONSTANT); }
+0{D}+{IS}?		{ yylval.string = new std::string(yytext);return(T_CONSTANT); }
+{D}+{IS}?		{ yylval.string = new std::string(yytext);return(T_CONSTANT); }
+L?'(\\.|[^\\'])+'	{ yylval.string = new std::string(yytext);return(T_CONSTANT); }
 
-{D}+{E}{FS}?		{ return(CONSTANT); }
-{D}*"."{D}+({E})?{FS}?	{ return(CONSTANT); }
-{D}+"."{D}*({E})?{FS}?	{ return(CONSTANT); }
+[0-9]+        { yylval.string = new std::string(yytext);return(T_CONSTANT); }
+{D}+{E}{FS}?		{ yylval.string = new std::string(yytext);return(T_CONSTANT); }
+{D}*"."{D}+({E})?{FS}?	{ yylval.string = new std::string(yytext);return(T_CONSTANT); }
+{D}+"."{D}*({E})?{FS}?	{ yylval.string = new std::string(yytext);return(T_CONSTANT); }
 
 L?\"(\\.|[^\\"])*\"	{ yylval.string = new std::string(yytext); return T_STRING_LITERAL; }
 
@@ -106,6 +109,7 @@ L?\"(\\.|[^\\"])*\"	{ yylval.string = new std::string(yytext); return T_STRING_L
 ">="					{ return T_GE_OP; }
 "=="					{ return T_EQ_OP; }
 "!="					{ return T_NE_OP; }
+
 ";"					{ return ';'; }
 ("{"|"<%")				{ return '{'; }
 ("}"|"%>")				{ return '}'; }
@@ -120,8 +124,8 @@ L?\"(\\.|[^\\"])*\"	{ yylval.string = new std::string(yytext); return T_STRING_L
 "&"					{ return '&'; }
 "!"					{ return '!'; }
 "~"					{ return '~'; }
-"-"					{ return '-'; }
-"+"					{ return '+'; }
+"-"					{ return T_SUB; }
+
 "*"					{ return '*'; }
 "/"					{ return '/'; }
 "%"					{ return '%'; }
@@ -149,17 +153,17 @@ void yyerror (char const *s){
 int check_type(void)
 {
 /*
-* pseudo code --- this is what it should check
-*
-*	if (yytext == type_name)
-*		return TYPE_NAME;
-*
-*	return IDENTIFIER;
-*/
+/ pseudo code --- this is what it should check
 
-/*
-*	it actually will only return IDENTIFIER
-*/
+	if (yytext == type_name)
+		return TYPE_NAME;
 
 	return IDENTIFIER;
+
+
+
+	it actually will only return IDENTIFIER
+
+
+	return IDENTIFIER;*/
 }

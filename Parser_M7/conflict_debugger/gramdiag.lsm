@@ -1,0 +1,15 @@
+Begin3
+Title:          gramdiag
+Version:        0.5a
+Entered-date:   10APR00
+Description:    Produces a report from 'bison -v' output
+                illustrating circumstances of shift/reduce and
+                reduce/reduce conflicts in the input grammar.
+Keywords:       bison, conflict resolution
+Author:         rpc@myself.com (Richard Curnow)
+Maintained-by:  rpc@myself.com (Richard Curnow)
+Primary-site:   sunsite.unc.edu /pub/Linux/devel/compiler-tools
+                12k gramdiag-0.5a.tar.gz
+Platforms:      Anything with GCC compiler
+Copying-policy: GPL
+End
