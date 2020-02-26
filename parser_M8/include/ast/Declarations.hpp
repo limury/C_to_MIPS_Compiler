@@ -21,7 +21,7 @@ class Initializer : public Root{};
 
 class DeclarationList : public Root {
   public:
-    DeclarationList( DeclarationList* declList, RootPtr decl ){
+    DeclarationList( RootPtr declList, RootPtr decl ){
       declList->append(decl);
       *this = *declList;
     }
@@ -43,7 +43,7 @@ class DeclarationList : public Root {
 
 class InitializerList: public Root {
   public:
-    InitializerList( InitializerList* initList, RootPtr init ){
+    InitializerList( RootPtr initList, RootPtr init ){
       initList->append(init);
       *this = *initList;
     }
@@ -137,7 +137,7 @@ class ParameterDeclaration : public Root {
 
 class ParameterList : public Root {
   public:
-    ParameterList( ParameterList* declList, RootPtr decl ){
+    ParameterList( RootPtr declList, RootPtr decl ){
       declList->append(decl);
       *this = *declList;
     }
@@ -226,7 +226,7 @@ class Enumerator : public Root {
 
 class EnumeratorList : public Root {
   public:
-    EnumeratorList( EnumeratorList* list, RootPtr decl ){
+    EnumeratorList( RootPtr list, RootPtr decl ){
       list->append(decl);
       *this = *list;
     }
@@ -251,6 +251,62 @@ class EnumeratorSpecifier : public Root {
   protected:
     string _identifier;
     RootPtr _enumList;
+};
+
+
+// Structs
+
+class StructDeclarator : public Root {
+  public:
+    StructDeclarator(RootPtr decl, RootPtr expr): _declarator(decl), _expression(expr) {}
+
+  protected:
+    RootPtr _declarator, _expression;
+};
+
+class StructDeclaratorList : public Root {
+  public:
+    StructDeclaratorList( RootPtr list, RootPtr decl ){
+      list->append(decl);
+      *this = *list;
+    }
+    StructDeclaratorList(RootPtr decl){
+      _list = new vector<RootPtr>;
+      _list->push_back(decl);
+    }
+    void append(RootPtr decl){
+      this->_list->push_back(decl);
+    }
+
+  protected:
+    vector<RootPtr>* _list;
+};
+
+
+class StructDeclaration : public Root {
+  public:
+    StructDeclaration(RootPtr speclist, RootPtr structlist): _specifierList(speclist), _structDeclaratorList(structlist) {}
+
+  protected:
+    RootPtr _specifierList, _structDeclaratorList;
+};
+
+class StructDeclarationList : public Root {
+  public:
+    StructDeclarationList( RootPtr list, RootPtr decl ){
+      list->append(decl);
+      *this = *list;
+    }
+    StructDeclarationList(RootPtr decl){
+      _list = new vector<RootPtr>;
+      _list->push_back(decl);
+    }
+    void append(RootPtr decl){
+      this->_list->push_back(decl);
+    }
+
+  protected:
+    vector<RootPtr>* _list;
 };
 
 

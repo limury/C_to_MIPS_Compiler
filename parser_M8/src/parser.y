@@ -23,7 +23,7 @@
 }
 
 
-%type<node> start primary_expression postfix_expression argument_expression_list unary_expression unary_operator cast_expression multiplicative_expression additive_expression shift_expression relational_expression equality_expression and_expression exclusive_or_expression inclusive_or_expression logical_and_expression logical_or_expression conditional_expression assignment_expression assignment_operator expression constant_expression declaration declaration_specifiers init_declarator_list init_declarator storage_class_specifier type_specifier struct_or_union_specifier struct_or_union struct_declaration_list struct_declaration specifier_qualifier_list struct_declarator_list struct_declarator enum_specifier enumerator_list enumerator type_qualifier declarator direct_declarator pointer type_qualifier_list parameter_type_list parameter_list parameter_declaration identifier_list type_name abstract_declarator direct_abstract_declarator initializer initializer_list statement labeled_statement compound_statement declaration_list statement_list expression_statement selection_statement iteration_statement jump_statement translation_unit external_declaration function_definition
+%type<node> start primary_expression postfix_expression argument_expression_list unary_expression unary_operator cast_expression multiplicative_expression additive_expression shift_expression relational_expression equality_expression and_expression exclusive_or_expression inclusive_or_expression logical_and_expression logical_or_expression conditional_expression assignment_expression assignment_operator expression constant_expression declaration declaration_specifiers init_declarator_list init_declarator storage_class_specifier type_specifier struct_specifier struct_declaration_list struct_declaration specifier_qualifier_list struct_declarator_list struct_declarator enum_specifier enumerator_list enumerator type_qualifier declarator direct_declarator pointer type_qualifier_list parameter_type_list parameter_list parameter_declaration identifier_list type_name abstract_declarator direct_abstract_declarator initializer initializer_list statement labeled_statement compound_statement declaration_list statement_list expression_statement selection_statement iteration_statement jump_statement translation_unit external_declaration function_definition
 
 %token T_IDENTIFIER T_CONSTANT T_STRING_LITERAL 
 %type <string> T_IDENTIFIER T_CONSTANT T_STRING_LITERAL 
@@ -191,8 +191,6 @@ declaration_specifiers
 	| storage_class_specifier declaration_specifiers    { $$ = new Node( declaration_specifiers, NodeVec{ $1, $2 } ); }
 	| type_specifier									{ $$ = new Node( declaration_specifiers, NodeVec{ $1 } ); }
 	| type_specifier declaration_specifiers             { $$ = new Node( declaration_specifiers, NodeVec{ $1, $2 } ); }
-	| type_qualifier									{ $$ = new Node( declaration_specifiers, NodeVec{ $1 } ); }
-	| type_qualifier declaration_specifiers             { $$ = new Node( declaration_specifiers, NodeVec{ $1, $2 } ); }
 	;
 
 init_declarator_list
@@ -223,47 +221,40 @@ type_specifier
 	| T_DOUBLE                        { $$ = opGen(DOUBLE); }
 	| T_SIGNED                        { $$ = opGen(SIGNED); }
 	| T_UNSIGNED                      { $$ = opGen(UNSIGNED); }
-	| struct_or_union_specifier     
+	| struct_specifier     
 	| enum_specifier
 	| T_TYPE_NAME                     { $$ = opGen(TYPE_NAME); }
 	;
 
-struct_or_union_specifier
-	: struct_or_union T_IDENTIFIER '{' struct_declaration_list '}'    { $$ = new Node( struct_or_union_specifier, NodeVec{ $1, new Node(IDENTIFIER, $2), opGen(L_BRACE), $4, opGen(R_BRACE)  } ); }
-	| struct_or_union '{' struct_declaration_list '}'       { $$ = new Node( struct_or_union_specifier, NodeVec{ $1, opGen(L_BRACE), $3, opGen(R_BRACE) } ); }
-	| struct_or_union T_IDENTIFIER            { $$ = new Node( struct_or_union_specifier, NodeVec{ $1, new Node(IDENTIFIER, $2) } ); }
-	;
-
-struct_or_union
-	: T_STRUCT            { $$ = opGen(STRUCT); }
-	| T_VOLATILE             { $$ = opGen(UNION); }
+struct_specifier
+	: T_STRUCT T_IDENTIFIER '{' struct_declaration_list '}'    { $$ = new Node( struct_specifier, NodeVec{ $1, new Node(IDENTIFIER, $2), opGen(L_BRACE), $4, opGen(R_BRACE)  } ); }
+	| T_STRUCT '{' struct_declaration_list '}'       { $$ = new Node( struct_specifier, NodeVec{ $1, opGen(L_BRACE), $3, opGen(R_BRACE) } ); }
+	| T_STRUCT T_IDENTIFIER            { $$ = new Node( struct_specifier, NodeVec{ $1, new Node(IDENTIFIER, $2) } ); }
 	;
 
 struct_declaration_list
-	: struct_declaration                             
-	| struct_declaration_list struct_declaration    { $$ = new Node( struct_declaration_list, NodeVec{ $1, $2 } ); }
+	: struct_declaration                            { $$ = new StructDeclaration($1); }
+	| struct_declaration_list struct_declaration    { $$ = new StructDeclaration($1, $2); }
 	;
 
 struct_declaration
-	: specifier_qualifier_list struct_declarator_list ';'   { $$ = new Node( struct_declaration, NodeVec{ $1, $2, opGen(SEMICOLON) } ); }
+	: specifier_qualifier_list struct_declarator_list ';'   { $$ = new StructDeclaration($1, $2); }
 	;
 
-specifier_qualifier_list                             
+specifier_qualifier_list // ?
 	: type_specifier specifier_qualifier_list       { $$ = new Node( specifier_qualifier_list, NodeVec{ $1, $2 } ); }
 	| type_specifier
-	| type_qualifier specifier_qualifier_list       { $$ = new Node( specifier_qualifier_list, NodeVec{ $1, $2 } ); }
-	| type_qualifier
 	;
 
 struct_declarator_list
-	: struct_declarator
-	| struct_declarator_list ',' struct_declarator  { $$ = new Node( struct_declarator_list, NodeVec{ $1, opGen(COMMA), $3 } ); }
+	: struct_declarator								{ $$ = new StructDeclaratorList($1); }
+	| struct_declarator_list ',' struct_declarator  { $$ = new StructDeclaratorList($1, $3); }
 	;
 
 struct_declarator
-	: declarator
-	| ':' constant_expression               { $$ = new Node( struct_declarator, NodeVec{ opGen(COLON), $2 } ); }
-	| declarator ':' constant_expression    { $$ = new Node( struct_declarator, NodeVec{ $1, opGen(COLON), $3 } ); }
+	: declarator	
+	| ':' constant_expression               		{ $$ = new StructDeclarator(NULL, $2); }
+	| declarator ':' constant_expression    		{ $$ = new StructDeclarator($1, $3); }
 	;
 
 enum_specifier
@@ -273,18 +264,13 @@ enum_specifier
 	;
 
 enumerator_list
-	: enumerator								{ $$ = new EnumeratorList($1); }
-	| enumerator_list ',' enumerator            { $$ = new EnumeratorList($1, $3); }
+	: enumerator									{ $$ = new EnumeratorList($1); }
+	| enumerator_list ',' enumerator            	{ $$ = new EnumeratorList($1, $3); }
 	;
 
 enumerator
-	: T_IDENTIFIER                				{ $$ = new Enumerator($1, NULL); }
-	| T_IDENTIFIER '=' constant_expression      { $$ = new Enumerator($1, $3); }
-	;
-
-type_qualifier // ?
-	: T_CONST             { $$ = opGen(CONST); }
-	| T_VOLATILE          { $$ = opGen(VOLATILE); }
+	: T_IDENTIFIER                					{ $$ = new Enumerator($1, NULL); }
+	| T_IDENTIFIER '=' constant_expression      	{ $$ = new Enumerator($1, $3); }
 	;
 
 declarator
@@ -302,16 +288,10 @@ direct_declarator
 	;
 
 pointer // ? really confused to how these pointer things work...
-	: '*'                                   { $$ = new Pointer(NULL) }
-	| '*' type_qualifier_list               
-	| '*' pointer                           { $$ = new Pointer($2, false) }
-	| '*' type_qualifier_list pointer       
+	: '*'                                   { $$ = new Pointer(NULL) }       
+	| '*' pointer                           { $$ = new Pointer($2, false) }    
 	;
 
-type_qualifier_list // ?
-	: type_qualifier
-	| type_qualifier_list type_qualifier    { $$ = new Node( type_qualifier_list, NodeVec{ $1, $2 } ); }
-	;
 
 
 parameter_type_list // ?

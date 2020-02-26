@@ -1,0 +1,18 @@
+Construct, Category, Done, To-do
+
+Additive Operators, Expressions, Y, nil
+Assignments, Expressions, Y, nil
+Bitwise Logic Operators, Expressions, Y, nil
+Conditional Operator, Expressions, Y, nil
+Equality Operators, Expressions, Y, nil
+Logical Operators, Expressions, Y, nil
+Multiplicative Operators, Expressions, Y, nil
+Pointer Arithmetic Checks, Expressions, Y, nil
+Relational Operators, Expressions, Y, nil
+Shift Operators, Expressions, Y, nil
+Unary Operators, Expressions, Y, nil
+Postfix Expressions, Expressions, Y, nil
+While Loop, Statements, Y, nil
+While Loop Continue/Break, Statements, Y, nil
+Extreme test for function calling, General, Y, nil
+Extreme test for pointers and assignment, General, Y, nil

@@ -7,6 +7,7 @@ class Root {
   public:
     virtual string printAST(){}
     virtual void getMIPS(vector<Instruction>& instruction, Context& context, int destreg = 0) {}
+    virtual void append(RootPtr element){}
 };
 typedef const Root* RootPtr;
 

@@ -1,0 +1,20 @@
+Date,Effort,Developers,Relevant Milestone,Notes
+21st Feb, 1, dl5215, -, -
+23rd Feb, 4, oll16, Functional tokens, Created the lexer to handle all essential constructs
+23rd Feb, 4, oll16, Functional tokens, Began implementing support for advanced constructs (enums/typedefs/structs/etc)
+25th Feb, 3, oll16, Expression Parsing, Parse tree support for expressions (easy)
+26th Feb, 3, dl5215, Expression Parsing, -
+27th Feb, 4, oll16, Statement Parsing, Parse tree support for statements (easy)
+1st-3rd March, 4, oll16, Declaration Parsing, Parse tree support for declarations (somewhat difficult)
+5th March, 3, both, C -> Python (complete), Turned out to be really easy
+6th March, 3, dl5215, Debug Python Translation, Altering the formative testbench to have more rigorous tests
+7th March, 3, dl5215, Debug Python Translation, Added large tests including recursion and arithmetic
+8-10th March, 3, both, Codegen Brainstorming, offline work to prepare infrastructure for codegen
+11th March, 2, oll16, Codegen Brainstorming, re-organised inheritance structure to suit new plan
+12-16th March, 5, oll16, Codegen, Created a working and scalable version of context for declarations
+17-19th March, 3, dl5215, Codegen, Added codegen support for all expressions
+19th March, 2, oll16, Write Basic Testbench, added bash framework and compulsory tests
+19-21st March, 4, dl5215, Prototype Testing, added more rigorous tests checking all language structures
+22nd March, 3, dl5215, Finalise Features, added very rigorous tests to check overall program function
+24th March, 3, oll16, Finalise Features, found and fixed new bugs 
+25-27th March, 3, both, Finalise Features, idle checking for spec compliance and final bug checks
