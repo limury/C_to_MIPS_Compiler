@@ -6,8 +6,7 @@
 typedef const Declaration* DeclarationPtr;
 typedef const Initializer* InitializerPtr;
 
-class Declaration : public Root{};
-class Initializer : public Root{};
+
 // Recursively flattens the array of declarations;
 // When the rule is a single Declaration it creates a new list
 // If instead it is a declaration plus a list, the rule returns a 
@@ -18,6 +17,37 @@ class Initializer : public Root{};
 // due to the rule 
 //initializer
 //	  : assignment_expression
+
+
+class ExternalDeclarationList : public Root {
+  public:
+    ExternalDeclarationList( RootPtr declList, RootPtr decl ){
+      declList->append(decl);
+      *this = *declList;
+    }
+
+    ExternalDeclarationList(RootPtr decl){
+      _list = new vector<RootPtr>;
+      _list->push_back(decl);
+    }
+
+    void append(RootPtr decl){
+      this->_list->push_back(decl);
+    }
+
+  protected:
+    vector<RootPtr>* _list;
+
+};
+
+class FunctionDefinition : public Root {
+  public:
+    FunctionDefinition(RootPtr p1, RootPtr p2, RootPtr p3): _declarationSpecifier(p1), _declarator(p2), _compoundStatement(p3) {}
+
+  protected:
+    RootPtr _declarationSpecifier, _declarator, _compoundStatement;
+};
+
 
 class DeclarationList : public Root {
   public:
@@ -308,6 +338,113 @@ class StructDeclarationList : public Root {
   protected:
     vector<RootPtr>* _list;
 };
+
+class StructSpecifier : public Root {
+  public: 
+    StructSpecifier(string name, RootPtr decl): _identifier(name), _declarationList(decl) {}
+
+  protected:
+    string _identifier;
+    RootPtr _declarationList;
+};
+
+
+
+// Types
+
+class SpecifierList : public Root {
+  public:
+    SpecifierList( RootPtr list, RootPtr decl ){
+      list->append(decl);
+      *this = *list;
+    }
+    SpecifierList(RootPtr decl){
+      _list = new vector<RootPtr>;
+      _list->push_back(decl);
+    }
+    void append(RootPtr decl){
+      this->_list->push_back(decl);
+    }
+
+  protected:
+    vector<RootPtr>* _list;
+};
+
+
+enum primitiveTypes { VOID, CHAR, SHORT, LONG, INT, FLOAT, DOUBLE, SIGNED, UNSIGNED }
+
+class PrimitiveType : public Root {
+    public:
+    PrimitiveType(primitiveTypes type): _type(type) {}
+
+    protected:
+    primitiveTypes _type;
+};
+
+class TypedefType : public Root {
+    public:
+    TypedefType(const string& name): _type(name) {}
+
+    protected:
+    string _type;
+};
+
+
+// Declarators
+
+class InitDeclarator : public Root {
+  public:
+    InitDeclarator(RootPtr decl, RootPtr init): _declarator(decl), _initializer(init) {}
+
+  protected:
+    RootPtr _declarator, _initializer;
+};
+
+class InitDeclaratorList : public Root {
+    public:
+    InitDeclaratorList( RootPtr list, RootPtr decl ){
+      list->append(decl);
+      *this = *list;
+    }
+    InitDeclaratorList(RootPtr decl){
+      _list = new vector<RootPtr>;
+      _list->push_back(decl);
+    }
+    void append(RootPtr decl){
+      this->_list->push_back(decl);
+    }
+
+  protected:
+    vector<RootPtr>* _list;
+};
+
+
+// Declarations
+
+class TypedefDeclarationSpecifier : public Root {
+  public:
+    TypedefDeclarationSpecifier(RootPtr decl): _declarationSpecifier(decl) {}
+
+  protected:
+    RootPtr _declarationSpecifier;
+};
+
+class SpecDeclarationSpecifier : public Root {
+  public:
+    SpecDeclarationSpecifier( RootPtr list, RootPtr decl ): _typeSpecifier(list), _declarationSpecifier(decl) {}
+
+  protected:
+    RootPtr _typeSpecifier, _declarationSpecifier;
+};
+
+class Declaration : public Root {
+  public:
+    Declaration(RootPtr declSpec, RootPtr initDecl): _declarationSpecifier(declSpec), _initDeclaratorList(initDecl) {}
+  
+  protected:
+    RootPtr _declarationSpecifier, _initDeclaratorList;
+};
+
 
 
 #endif

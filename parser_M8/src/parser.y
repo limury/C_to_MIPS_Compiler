@@ -17,13 +17,15 @@
 }
 
 %union{
-    NodePtr node;
+    RootPtr node;
     yytokentype token;
     std::string* string;
+	unaryOperator* op;
 }
 
 
-%type<node> start primary_expression postfix_expression argument_expression_list unary_expression unary_operator cast_expression multiplicative_expression additive_expression shift_expression relational_expression equality_expression and_expression exclusive_or_expression inclusive_or_expression logical_and_expression logical_or_expression conditional_expression assignment_expression assignment_operator expression constant_expression declaration declaration_specifiers init_declarator_list init_declarator storage_class_specifier type_specifier struct_specifier struct_declaration_list struct_declaration specifier_qualifier_list struct_declarator_list struct_declarator enum_specifier enumerator_list enumerator type_qualifier declarator direct_declarator pointer type_qualifier_list parameter_type_list parameter_list parameter_declaration identifier_list type_name abstract_declarator direct_abstract_declarator initializer initializer_list statement labeled_statement compound_statement declaration_list statement_list expression_statement selection_statement iteration_statement jump_statement translation_unit external_declaration function_definition
+%type<node> start primary_expression postfix_expression argument_expression_list unary_expression cast_expression multiplicative_expression additive_expression shift_expression relational_expression equality_expression and_expression exclusive_or_expression inclusive_or_expression logical_and_expression logical_or_expression conditional_expression assignment_expression assignment_operator expression constant_expression declaration declaration_specifiers init_declarator_list init_declarator storage_class_specifier type_specifier struct_specifier struct_declaration_list struct_declaration specifier_qualifier_list struct_declarator_list struct_declarator enum_specifier enumerator_list enumerator type_qualifier declarator direct_declarator pointer type_qualifier_list parameter_type_list parameter_list parameter_declaration identifier_list type_name abstract_declarator direct_abstract_declarator initializer initializer_list statement labeled_statement compound_statement declaration_list statement_list expression_statement selection_statement iteration_statement jump_statement translation_unit external_declaration function_definition
+%type<unaryOperator> unary_operator
 
 %token T_IDENTIFIER T_CONSTANT T_STRING_LITERAL 
 %type <string> T_IDENTIFIER T_CONSTANT T_STRING_LITERAL 
@@ -45,136 +47,132 @@
 %%
 
 primary_expression
-	: T_IDENTIFIER            { $$ = new Node(IDENTIFIER, $1); }
-	| T_CONSTANT              { $$ = new Node(CONSTANT, $1); }
-	| T_STRING_LITERAL        { $$ = new Node(STRING_LIT, $1); }
-	| '(' expression ')'      { $$ = new Node(expression, NodeVec{$2}); }
+	: T_IDENTIFIER            { $$ = new PrimaryExpression(IDENTIFIER, *$1); }
+	| T_CONSTANT              { $$ = new PrimaryExpression(CONSTANT, *$1); }
+	| T_STRING_LITERAL        { $$ = new PrimaryExpression(STRING_LIT, *$1); }
+	| '(' expression ')'      { $$ = $2; }
 	;
 
 postfix_expression
 	: primary_expression    
-	| postfix_expression '[' expression ']'     { $$ = new Node(postfix_expression, NodeVec{ $1, new Operator(L_BRACKET), $3, new Operator(R_BRACKET) }); }
-	| postfix_expression '(' ')'        { $$ = new Node(postfix_expression, NodeVec{ $1, new Operator(L_PARENTHESES), new Operator(R_PARENTHESES)}); }
-	| postfix_expression '(' argument_expression_list ')'       { $$ = new Node(postfix_expression, NodeVec{ $1, new Operator(L_PARENTHESES), $3, new Operator(R_PARENTHESES) }) ; }
-	| postfix_expression '.' T_IDENTIFIER         { $$ = new Node(postfix_expression, NodeVec{$1, new Operator(DOT), new Node(IDENTIFIER, $3)} ); }
-	| postfix_expression T_PTR_OP T_IDENTIFIER      { $$ = new Node(   postfix_expression, NodeVec{  $1, new Operator(PTR_OP), new Node(IDENTIFIER, $3)  }   ); }
-	| postfix_expression T_INC_OP         { $$ = new Node(postfix_expression, NodeVec{$1, new Operator(INC_OP)}); }
-	| postfix_expression T_DEC_OP         { $$ = new Node(postfix_expression, NodeVec{$1, new Operator(DEC_OP)}); }
+	| postfix_expression '[' expression ']'     				{ $$ = new ArrayPostfixExpression($1, $3); }
+	| postfix_expression '(' ')'        						{ $$ = new FunctionPostfixExpression($1, NULL); }
+	| postfix_expression '(' argument_expression_list ')'       { $$ = new FunctionPostfixExpression($1, $3); }
+	| postfix_expression '.' T_IDENTIFIER         				{ $$ = new DotPostfixExpression($1, *$3); }
+	| postfix_expression T_PTR_OP T_IDENTIFIER      			{ $$ = new ArrowPostfixExpression($1, *$3); }
+	| postfix_expression T_INC_OP         						{ $$ = new IncrementPostfixExpression($1); }
+	| postfix_expression T_DEC_OP         						{ $$ = new DecrementPostfixExpression($1); }
 	;
 
 argument_expression_list
-	: assignment_expression             
-	| argument_expression_list ',' assignment_expression    { $$ = new Node(argument_expression_list, NodeVec{$1, new Operator(COMMA), $3}); }
+	: assignment_expression             					{ $$ = new ArgumentExpressionList($1); }
+	| argument_expression_list ',' assignment_expression    { $$ = new ArgumentExpressionList($1, $3); }
 	;
 
 unary_expression
 	: postfix_expression
-	| T_INC_OP unary_expression           { $$ = new Node( unary_expression, NodeVec{new Operator(INC_OP), $2} );}
-	| T_DEC_OP unary_expression           { $$ = new Node( unary_expression, NodeVec{new Operator(DEC_OP), $2} );}
-	| unary_operator cast_expression    { $$ = new Node( unary_expression, NodeVec{$1, $2} ); }
-	| T_SIZEOF unary_expression           { $$ = new Node( unary_expression, NodeVec{new Operator(SIZEOF), $2} ); }
-	| T_SIZEOF '(' type_name ')'          { $$ = new Node( unary_expression, NodeVec{new Operator(SIZEOF),new Operator(L_PARENTHESES), $3, new Operator(R_PARENTHESES),} ); }
+	| T_ADD cast_expression    				{ $$ = $2}
+	| T_INC_OP unary_expression           	{ $$ = new PreincrementUnaryExpression($2);}
+	| T_DEC_OP unary_expression           	{ $$ = new PredecrementUnaryExpression;}
+	| unary_operator cast_expression    	{ $$ = new UnaryOperatorExpression(*$1, $2); }
+	| T_SIZEOF unary_expression           	{ $$ = new SizeofUnaryExpression($2); }
+	| T_SIZEOF '(' type_name ')'          	{ $$ = new SizeofTypeUnaryExpression($2); }
 	;
 
 unary_operator
-	: '&'                               { $$ = new Node( unary_operator, NodeVec{new Operator(BIN_AND)} ); }
-	| '*'                               { $$ = new Node( unary_operator, NodeVec{new Operator(MULT)} ); }
-/*	| T_ADD                               { $$ = new Node( unary_operator, NodeVec{new Operator(PLUS)} ); }*/
-	| T_SUB                               { $$ = new Node( unary_operator, NodeVec{new Operator(MINUS)} ); }
-	| '~'                               { $$ = new Node( unary_operator, NodeVec{new Operator(BIN_NOT)} ); }
-	| '!'                               { $$ = new Node( unary_operator, NodeVec{new Operator(LOGICAL_NOT)} ); }
+	: '&'                               { $$ = new unaryOperator(REFERENCE); }
+	| '*'                               { $$ = new unaryOperator(DEREFERENCE); }
+	| T_SUB                             { $$ = new unaryOperator(MINUS); }
+	| '~'                               { $$ = new unaryOperator(BITWISE_NOT); }
+	| '!'                              	{ $$ = new unaryOperator(LOGICAL_NOT); }
 	;
 
-cast_expression
+cast_expression // ?
 	: unary_expression
 	| '(' type_name ')' cast_expression         { $$ = new Node( cast_expression, NodeVec{  new Operator(L_PARENTHESES), $2, new Operator(R_PARENTHESES), $4  } ); }
 	;
 
 multiplicative_expression
 	: cast_expression
-	| multiplicative_expression '*' cast_expression     { $$ = new Node( multiplicative_expression, NodeVec{ $1, opGen(MULT), $3 } ); }
-	| multiplicative_expression '/' cast_expression     { $$ = new Node( multiplicative_expression, NodeVec{ $1, opGen(DIVIDE), $3 } ); }
-	| multiplicative_expression '%' cast_expression     { $$ = new Node( multiplicative_expression, NodeVec{ $1, opGen(MODULO), $3 } ); }
+	| multiplicative_expression '*' cast_expression     { $$ = new MultiplicationExpression($1, $3); }
+	| multiplicative_expression '/' cast_expression     { $$ = new DivisionExpression($1, $3); }
+	| multiplicative_expression '%' cast_expression     { $$ = new ModulusExpression($1, $3); }
 	;
 
 additive_expression
 	: multiplicative_expression
-	| additive_expression T_ADD multiplicative_expression     { $$ = new Node( additive_expression, NodeVec{ $1, opGen(PLUS), $3 } ); }
-	| additive_expression T_SUB multiplicative_expression     { $$ = new Node( additive_expression, NodeVec{ $1, opGen(MINUS), $3 } ); }
+	| additive_expression T_ADD multiplicative_expression     { $$ = new AdditionExpression($1, $3); }
+	| additive_expression T_SUB multiplicative_expression     { $$ = new SubtractionExpression($1, $3); }
 	;
 
 shift_expression
 	: additive_expression
-	| shift_expression T_LEFT_OP additive_expression      { $$ = new Node( shift_expression, NodeVec{ $1, opGen(LEFT_OP), $3} ); }
-	| shift_expression T_RIGHT_OP additive_expression     { $$ = new Node( shift_expression, NodeVec{ $1, opGen(RIGHT_OP), $3} ); }
+	| shift_expression T_LEFT_OP additive_expression      { $$ = new LeftShiftExpression($1, $3); }
+	| shift_expression T_RIGHT_OP additive_expression     { $$ = new RightShiftExpression($1, $3); }
 	;
 
 relational_expression
 	: shift_expression
-	| relational_expression '<' shift_expression        { $$ = new Node( relational_expression, NodeVec{ $1, opGen(LT), $3 } );}
-	| relational_expression '>' shift_expression        { $$ = new Node( relational_expression, NodeVec{ $1, opGen(GT), $3 } );}
-	| relational_expression T_LE_OP shift_expression      { $$ = new Node( relational_expression, NodeVec{ $1, opGen(LE_OP), $3 } );}
-	| relational_expression T_GE_OP shift_expression      { $$ = new Node( relational_expression, NodeVec{ $1, opGen(GE_OP), $3 } );}
+	| relational_expression '<' shift_expression        { $$ = new LessThanExpression($1, $3); }
+	| relational_expression '>' shift_expression        { $$ = new GreaterThanExpression($1, $3); }
+	| relational_expression T_LE_OP shift_expression      { $$ = new LessEqualExpression($1, $3); }
+	| relational_expression T_GE_OP shift_expression      { $$ = new GreaterEqualExpression($1, $3); }
 	;
 
 equality_expression
 	: relational_expression
-	| equality_expression T_EQ_OP relational_expression   { $$ = new Node( equality_expression, NodeVec{ $1, opGen(EQ_OP), $3 } );}
-	| equality_expression T_NE_OP relational_expression   { $$ = new Node( equality_expression, NodeVec{ $1, opGen(NE_OP), $3 } );}
+	| equality_expression T_EQ_OP relational_expression   { $$ = new EqualityExpression($1, $3); }
+	| equality_expression T_NE_OP relational_expression   { $$ = new InequalityExpression($1, $3); }
 	;
 
 and_expression
 	: equality_expression                               
-	| and_expression '&' equality_expression            { $$ = new Node( and_expression, NodeVec{ $1, opGen(BIN_AND), $3 } );}
+	| and_expression '&' equality_expression            { $$ = new AndBitwiseExpression($1, $3); }
 	;
 
 exclusive_or_expression
 	: and_expression
-	| exclusive_or_expression '^' and_expression        { $$ = new Node( exclusive_or_expression, NodeVec{ $1, opGen(BIN_XOR), $3 } );}
+	| exclusive_or_expression '^' and_expression        { $$ = new XorBitwiseExpression($1, $3); }
 	;
 
 inclusive_or_expression
 	: exclusive_or_expression
-	| inclusive_or_expression '|' exclusive_or_expression   { $$ = new Node( inclusive_or_expression, NodeVec{ $1, opGen(BIN_OR), $3 } );}
+	| inclusive_or_expression '|' exclusive_or_expression   { $$ = new OrBitwiseExpression($1, $3); }
 	;
 
 logical_and_expression
 	: inclusive_or_expression
-	| logical_and_expression T_AND_OP inclusive_or_expression { $$ = new Node( logical_and_expression, NodeVec{ $1, opGen(AND_OP), $3 } );}
+	| logical_and_expression T_AND_OP inclusive_or_expression { $$ = new AndLogicalExpression($1, $3); }
 	;
 
 logical_or_expression
 	: logical_and_expression
-	| logical_or_expression T_OR_OP logical_and_expression    { $$ = new Node( logical_or_expression, NodeVec{ $1, opGen(OR_OP), $3 } ); }
+	| logical_or_expression T_OR_OP logical_and_expression    { $$ = new OrLogicalExpression($1, $3); }
 	;
 
 conditional_expression
 	: logical_or_expression
-	| logical_or_expression '?' expression ':' conditional_expression   { $$ = new Node( conditional_expression, NodeVec{ $1, opGen(QUESTION_MARK), $3, opGen(COLON), $5 } );}
+	| logical_or_expression '?' expression ':' conditional_expression   { $$ = new ConditionalExpression($1, $3, $5); }
 	;
 
 assignment_expression
 	: conditional_expression
-	| unary_expression assignment_operator assignment_expression    { $$ = new Node( relational_expression, NodeVec{ $1, $2, $3 } );}
-	;
-
-assignment_operator
-	: '='                           { $$ = opGen(EQUALS); }
-	| T_MUL_ASSIGN                    { $$ = opGen(MUL_ASSIGN); }
-	| T_DIV_ASSIGN                    { $$ = opGen(DIV_ASSIGN); }
-	| T_MOD_ASSIGN                    { $$ = opGen(MOD_ASSIGN); }
-	| T_ADD_ASSIGN                    { $$ = opGen(ADD_ASSIGN); }
-	| T_SUB_ASSIGN                    { $$ = opGen(SUB_ASSIGN); }
-	| T_LEFT_ASSIGN                   { $$ = opGen(LEFT_ASSIGN); }
-	| T_RIGHT_ASSIGN                  { $$ = opGen(RIGHT_ASSIGN); }
-	| T_AND_ASSIGN                    { $$ = opGen(AND_ASSIGN); }
-	| T_XOR_ASSIGN                    { $$ = opGen(XOR_ASSIGN); }
-	| T_OR_ASSIGN                     { $$ = opGen(OR_ASSIGN); }
+	| unary_expression '=' assignment_expression                          	{ $$ = new EqualAssignmentExpression($1, $3); }
+	| unary_expression T_MUL_ASSIGN assignment_expression                   { $$ = new MultAssignmentExpression($1, $3); }
+	| unary_expression T_DIV_ASSIGN assignment_expression                   { $$ = new DivAssignmentExpression($1, $3); }
+	| unary_expression T_MOD_ASSIGN assignment_expression                   { $$ = new ModAssignmentExpression($1, $3); }
+	| unary_expression T_ADD_ASSIGN assignment_expression                   { $$ = new AddAssignmentExpression($1, $3); }
+	| unary_expression T_SUB_ASSIGN assignment_expression                   { $$ = new SubAssignmentExpression($1, $3); }
+	| unary_expression T_LEFT_ASSIGN assignment_expression                  { $$ = new LeftAssignmentExpression($1, $3); }
+	| unary_expression T_RIGHT_ASSIGN assignment_expression                 { $$ = new RightAssignmentExpression($1, $3); }
+	| unary_expression T_AND_ASSIGN assignment_expression                   { $$ = new AndAssignmentExpression($1, $3); }
+	| unary_expression T_XOR_ASSIGN assignment_expression                   { $$ = new XorAssignmentExpression($1, $3); }
+	| unary_expression T_OR_ASSIGN assignment_expression                    { $$ = new OrAssignmentExpression($1, $3); }
 	;
 
 expression
-	: assignment_expression
-	| expression ',' assignment_expression      { $$ = new Node( expression, NodeVec{ $1, opGen(COMMA), $3 } ); }
+	: assignment_expression						{ $$ = new ExpressionList($1); }
+	| expression ',' assignment_expression      { $$ = new ExpressionList($1, $3); }
 	;
 
 constant_expression
@@ -182,28 +180,28 @@ constant_expression
 	;
 
 declaration
-	: declaration_specifiers ';'                        { $$ = new Node( declaration, NodeVec{ $1, opGen(SEMICOLON) } );  }
-	| declaration_specifiers init_declarator_list ';'   { $$ = new Node( declaration, NodeVec{ $1, $2, opGen(SEMICOLON) } ); }
+	: declaration_specifiers ';'                        
+	| declaration_specifiers init_declarator_list ';'   { $$ = new Declaration($1, $2); }
 	;
 
-declaration_specifiers
-	: storage_class_specifier                           { $$ = new Node( declaration_specifiers, NodeVec{ $1 } ); }
-	| storage_class_specifier declaration_specifiers    { $$ = new Node( declaration_specifiers, NodeVec{ $1, $2 } ); }
-	| type_specifier									{ $$ = new Node( declaration_specifiers, NodeVec{ $1 } ); }
-	| type_specifier declaration_specifiers             { $$ = new Node( declaration_specifiers, NodeVec{ $1, $2 } ); }
+declaration_specifiers // ? storage class specifier only typedef?
+	: storage_class_specifier                           { $$ = new TypedefDeclarationSpecifier(NULL); }
+	| storage_class_specifier declaration_specifiers    { $$ = new TypedefDeclarationSpecifier($2); }
+	| type_specifier									
+	| type_specifier declaration_specifiers             { $$ = new SpecDeclarationSpecifier($2, $1); }
 	;
 
 init_declarator_list
-	: init_declarator
-	| init_declarator_list ',' init_declarator          { $$ = new Node( init_declarator_list, NodeVec{ $1, opGen(COMMA), $3 } ); }
+	: init_declarator									{ $$ = new InitDeclaratorList($1); }
+	| init_declarator_list ',' init_declarator          { $$ = new InitDeclaratorList($1, $3); }
 	;
 
 init_declarator
 	: declarator
-	| declarator '=' initializer            { $$ = new Node( init_declarator, NodeVec{ $1, opGen(EQUALS), $3 } ); }
+	| declarator '=' initializer            { $$ = new InitDeclarator($1, $3); }
 	;
 
-storage_class_specifier
+storage_class_specifier // ?
 	: T_TYPEDEF                       { $$ = opGen(TYPEDEF); }
 	| T_EXTERN                        { $$ = opGen(EXTERN); }
 	| T_STATIC                        { $$ = opGen(STATIC); }
@@ -212,29 +210,29 @@ storage_class_specifier
 	;
 
 type_specifier
-	: T_VOID                          { $$ = opGen(VOID); }
-	| T_CHAR                          { $$ = opGen(CHAR); }
-	| T_SHORT                         { $$ = opGen(SHORT); }
-	| T_INT                           { $$ = opGen(INT); }
-	| T_LONG                          { $$ = opGen(LONG); }
-	| T_FLOAT                         { $$ = opGen(FLOAT); }
-	| T_DOUBLE                        { $$ = opGen(DOUBLE); }
-	| T_SIGNED                        { $$ = opGen(SIGNED); }
-	| T_UNSIGNED                      { $$ = opGen(UNSIGNED); }
+	: T_VOID                          { $$ = PrimitiveType(VOID); }
+	| T_CHAR                          { $$ = PrimitiveType(CHAR); }
+	| T_SHORT                         { $$ = PrimitiveType(SHORT); }
+	| T_INT                           { $$ = PrimitiveType(INT); }
+	| T_LONG                          { $$ = PrimitiveType(LONG); }
+	| T_FLOAT                         { $$ = PrimitiveType(FLOAT); }
+	| T_DOUBLE                        { $$ = PrimitiveType(DOUBLE); }
+	| T_SIGNED                        { $$ = PrimitiveType(SIGNED); }
+	| T_UNSIGNED                      { $$ = PrimitiveType(UNSIGNED); }
 	| struct_specifier     
 	| enum_specifier
-	| T_TYPE_NAME                     { $$ = opGen(TYPE_NAME); }
+	| T_TYPE_NAME                     { $$ = TypedefType($1); }
 	;
 
 struct_specifier
-	: T_STRUCT T_IDENTIFIER '{' struct_declaration_list '}'    { $$ = new Node( struct_specifier, NodeVec{ $1, new Node(IDENTIFIER, $2), opGen(L_BRACE), $4, opGen(R_BRACE)  } ); }
-	| T_STRUCT '{' struct_declaration_list '}'       { $$ = new Node( struct_specifier, NodeVec{ $1, opGen(L_BRACE), $3, opGen(R_BRACE) } ); }
-	| T_STRUCT T_IDENTIFIER            { $$ = new Node( struct_specifier, NodeVec{ $1, new Node(IDENTIFIER, $2) } ); }
+	: T_STRUCT T_IDENTIFIER '{' struct_declaration_list '}'    	{ $$ = new StructSpecifier(*$2, $4); }
+	| T_STRUCT '{' struct_declaration_list '}'       			{ $$ = new StructSpecifier("", $3); }
+	| T_STRUCT T_IDENTIFIER            							{ $$ = new StructSpecifier(*$2, NULL); }
 	;
 
 struct_declaration_list
-	: struct_declaration                            { $$ = new StructDeclaration($1); }
-	| struct_declaration_list struct_declaration    { $$ = new StructDeclaration($1, $2); }
+	: struct_declaration                            { $$ = new StructDeclarationList($1); }
+	| struct_declaration_list struct_declaration    { $$ = new StructDeclarationList($1, $2); }
 	;
 
 struct_declaration
@@ -291,8 +289,6 @@ pointer // ? really confused to how these pointer things work...
 	: '*'                                   { $$ = new Pointer(NULL) }       
 	| '*' pointer                           { $$ = new Pointer($2, false) }    
 	;
-
-
 
 parameter_type_list // ?
 	: parameter_list
@@ -358,7 +354,7 @@ statement
 	| jump_statement
 	;
 
-labeled_statement
+labeled_statement // ?
 	: T_IDENTIFIER ':' statement          { $$ = new Node( labeled_statement, NodeVec{ new Node(IDENTIFIER, $1), opGen(COLON), $3 } ); }
 	| T_CASE constant_expression ':' statement    { $$ = new Node( labeled_statement, NodeVec{ opGen(CASE), $2, opGen(COLON), $4 } ); }
 	| T_DEFAULT ':' statement             { $$ = new Node( labeled_statement, NodeVec{ opGen(DEFAULT), opGen(COLON), $3 } ); }
@@ -377,54 +373,51 @@ declaration_list
 	;
 
 statement_list
-	: statement
-	| statement_list statement      { $$ = new Node( statement_list, NodeVec{ $1, $2 } ); }
+	: statement						{ $$ = new StatementList($1); }
+	| statement_list statement      { $$ = new StatementList($1, $2); }
 	;
 
 expression_statement
-	: ';'       { $$ = opGen(SEMICOLON); }
-	| expression ';'                { $$ = new Node( expression_statement, NodeVec{ $1, opGen(SEMICOLON) } ); }
+	: ';'       					{ $$ = ExpressionStatement(NULL); }
+	| expression ';'                { $$ = ExpressionStatement($1); }
 	;
 
 selection_statement
-	: T_IF '(' expression ')' statement                   { $$ = new Node( selection_statement, NodeVec{ opGen(IF), opGen(L_PARENTHESES), $3, opGen(R_PARENTHESES), $5 } ); }
-	| T_IF '(' expression ')' statement T_ELSE statement    { $$ = new Node( selection_statement, NodeVec{ opGen(IF), opGen(L_PARENTHESES), $3, opGen(R_PARENTHESES), $5, opGen(ELSE), $7 } ); }
-	| T_SWITCH '(' expression ')' statement           { $$ = new Node( selection_statement, NodeVec{ opGen(SWITCH), opGen(L_PARENTHESES), $3, opGen(R_PARENTHESES), $5 } ); }
+	: T_IF '(' expression ')' statement                   	{ $$ = new IfSelectStatement($3, $5); }
+	| T_IF '(' expression ')' statement T_ELSE statement    { $$ = new IfElseSelectStatement($3, $5, $7); }
+	| T_SWITCH '(' expression ')' statement           		{ $$ = new SwitchSelectStatement($3, $5); }
 	;
 
-iteration_statement
-	: T_WHILE '(' expression ')' statement            { $$ = new Node( iteration_statement, NodeVec{ opGen(WHILE), opGen(L_PARENTHESES), $3, opGen(R_PARENTHESES), $5 } ); }
-	| T_DO statement T_WHILE '(' expression ')' ';'     { $$ = new Node( iteration_statement, NodeVec{ opGen(DO), $2, opGen(WHILE), opGen(L_PARENTHESES), $5, opGen(R_PARENTHESES), opGen(SEMICOLON) } ); }
-	| T_FOR '(' expression_statement expression_statement ')' statement   { $$ = new Node( iteration_statement, NodeVec{ opGen(FOR), opGen(L_PARENTHESES), $3, $4, opGen(R_PARENTHESES), $6 } ); }
-	| T_FOR '(' expression_statement expression_statement expression ')' statement    { $$ = new Node( iteration_statement, NodeVec{ opGen(FOR), opGen(L_PARENTHESES), $3, $4, $5, opGen(R_PARENTHESES), $7 } ); }
+iteration_statement  // ?
+	: T_WHILE '(' expression ')' statement            { $$ = new WhileIterationStatement($3, $5); }
+	| T_DO statement T_WHILE '(' expression ')' ';'     { $$ = new DoWhileIterationStatement($5, $2); }
+	| T_FOR '(' expression_statement expression_statement ')' statement   			  { $$ = new ForIterationStatement($3, $4, NULL, $6); }
+	| T_FOR '(' expression_statement expression_statement expression ')' statement    { $$ = new ForIterationStatement($3, $4, $5, $7); }
 	;
 
 jump_statement
-	: T_GOTO T_IDENTIFIER ';'       { $$ = new Node( jump_statement, NodeVec{ opGen(GOTO), new Node(IDENTIFIER, $2), opGen(SEMICOLON) } ); }
-	| T_CONTINUE ';'              { $$ = new Node( jump_statement, NodeVec{ opGen(CONTINUE), opGen(SEMICOLON) } ); }
-	| T_BREAK ';'                 { $$ = new Node( jump_statement, NodeVec{ opGen(BREAK), opGen(SEMICOLON) } ); }
-	| T_RETURN ';'                { $$ = new Node( jump_statement, NodeVec{ opGen(RETURN), opGen(SEMICOLON) } ); }
-	| T_RETURN expression ';'     { $$ = new Node( jump_statement, NodeVec{ opGen(RETURN), $2, opGen(SEMICOLON) } ); }
+	: T_CONTINUE ';'              { $$ = new ContinueJumpStatement(); }
+	| T_BREAK ';'                 { $$ = new BreakJumpStatement(); }
+	| T_RETURN ';'                { $$ = new ReturnJumpStatement(NULL); }
+	| T_RETURN expression ';'     { $$ = new ReturnJumpStatement($2); }
 	;
 
 start
-    : translation_unit { root = $1; }
+    : translation_unit 						{ root = $1; }
 
 translation_unit
-	: external_declaration         
-	| translation_unit external_declaration     { $$ = new Node( translation_unit, NodeVec{ $1, $2 } ); }
+	: external_declaration         				{ $$ = new ExternalDeclarationList($1); }
+	| translation_unit external_declaration     { $$ = new ExternalDeclarationList($1, $2); }
 	;
 
 external_declaration
 	: function_definition
-	| declaration    { $$ = $1; }
+	| declaration
 	;
 
 function_definition
-	: declaration_specifiers declarator declaration_list compound_statement     {  $$ = new Node( function_definition, NodeVec{ $1, $2, $3, $4 } ); }
-	| declaration_specifiers declarator compound_statement      {  $$ = new Node( function_definition, NodeVec{ $1, $2, $3 } ); }
-	| declarator declaration_list compound_statement        {  $$ = new Node( function_definition, NodeVec{ $1, $2, $3 } ); }
-	| declarator compound_statement                { $$ = new Node( function_definition, NodeVec{ $1, $2 } ); }
+	: declaration_specifiers declarator compound_statement      { $$ = new FunctionDefinition($1, $2, $3); }
+	| declarator compound_statement                				{ $$ = new FunctionDefinition(NULL, $1, $2); }
 	;
 
 %%

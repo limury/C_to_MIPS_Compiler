@@ -15,16 +15,5 @@ class RootExpression : public Root {
 
 };
 
-class RootArray : public Root {
-  public:
-    RootArray(RootPtr element){
-        this.branches.push_back(element);
-    }
-    RootArray(RootArray list, RootPtr element){
-
-    }
-
-    RootArray* branches;
-};
 
 #endif
